@@ -46,7 +46,7 @@ def get_data(location, db_name):
     conn.autocommit = True
     cur = conn.cursor()
     
-    cur.execute('SELECT * FROM test;')
+    cur.execute('SELECT * FROM address;')
     data = cur.fetchall()
     
     cur.close()
