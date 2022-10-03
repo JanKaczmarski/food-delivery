@@ -5,13 +5,31 @@ app = Flask(__name__)
 
 psql_port = "5432"
 
-def create_db(db_name):
+def insert_restaurant(restaurant_data):
+    conn = get_db_connection()
+    conn.autocommit = True
+    cur = conn.cursor()
+    
+    cur.execute(f"""INSERT INTO restaurant(restaurant_id, name, description, img, address)
+                VALUES({restaurant_data[0]}, '{restaurant_data[1]}, '{restaurant_data[2]}, '{restaurant_data[3]}, '{restaurant_data[4]}')""")
+    
+    cur.close()
+    conn.close()
+    
+    
+def get_db_connection(db_name="locations"):
     conn = psycopg2.connect(
-            host='postgresql',
-            port=psql_port,
-            user='postgres',
-            password='password'
-        )
+        host="postgresql",
+        port=psql_port,
+        user="postgres",
+        password="password",
+        dbname=db_name
+    )
+
+    return conn
+
+def create_db():
+    conn = get_db_connection(db_name="postgres")
     conn.autocommit = True
     cur = conn.cursor()
     try:
@@ -20,12 +38,7 @@ def create_db(db_name):
         pass
     cur.close()
     conn.close()
-    conn = psycopg2.connect(
-                host='postgresql',
-                port=psql_port,
-                user='postgres',
-                password='password',
-                dbname=db_name)
+    conn = get_db_connection()
     conn.autocommit = True
     cur = conn.cursor()
     sql = open("create_tables.sql", "r")
@@ -35,23 +48,32 @@ def create_db(db_name):
     cur.close()
     conn.close()
 
-def get_data(location, db_name):
-    create_db(db_name)
-    conn = psycopg2.connect(
-        host='postgresql',
-        port=psql_port,
-        user='postgres',
-        password='password',
-        dbname=db_name)
+def get_data(location):
+    create_db()
+    conn = get_db_connection()
     conn.autocommit = True
     cur = conn.cursor()
     
-    cur.execute('SELECT * FROM address;')
+    cur.execute(f"""SELECT * FROM restaurant as r WHERE r.restaurant_id IN (SELECT ra.restaurant_id FROM restaurant_address as ra WHERE ra.address_id IN 
+                (SELECT a.address_id FROM address as a WHERE a.address_name = '{location}'));""")
     data = cur.fetchall()
     
     cur.close()
     conn.close() 
     return data   
+
+def get_poss_addresses():
+    conn = get_db_connection()
+    conn.autocommit = True
+    cur = conn.cursor()
+    
+    cur.execute("SELECT address_name FROM address")
+    data = cur.fetchall()
+    
+    cur.close()
+    conn.close()
+
+    return data
 
 @app.route('/')
 def home():
@@ -59,21 +81,20 @@ def home():
 
 @app.route('/login/', methods=['post', 'get'])
 def login():
-    global poss_restaurants
+    global delivery_address_data
     global address
-    poss_restaurants = []
     if request.method == 'POST':
-        address = request.form.get('address').capitalize()
-        delivery_address_data = get_data(address, "locations")
-        # Here should be a request to database with possible restaurants for given address
-        if address.lower() == 'olmonty':
-            poss_restaurants = ["Halo Sushi", "Halo Pizza", "Gorący Trójkąt", delivery_address_data]
+        address = request.form.get('address')
+        # unpack locations from psycopg2.cursor.fetchall() method
+        poss_addresses = [i[0] for i in get_poss_addresses()] 
+        if address.lower() in poss_addresses:
+            delivery_address_data = get_data(address.lower())
             return redirect(url_for('address'))
         else:
-            return "No possible restaurants"
+            return "No possible restaurants for that area"
 
-    return render_template('login.html', poss_restaurants=poss_restaurants)
+    return render_template('login.html')
 
 @app.route('/address/')
 def address():
-    return f"For {address} we have these restaurants: \n{poss_restaurants}"
+    return f"For {address.capitalize()} we have these restaurants: \n{delivery_address_data}"

@@ -5,13 +5,6 @@
     <title>Login</title>
 </head>
 <body>
-    <h3>Available restaurants</h3>
-    {% if poss_restaurants %}
-        {% for location in poss_restaurants %}
-            <p>{{ location }}</p>
-        {% endfor %}
-    {% endif %}
-
     <form action="" method="post">
         <p>
             <label for="address">Give us your delivery address</label>

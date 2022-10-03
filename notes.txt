@@ -1,4 +1,1 @@
-1. SQL query to extract available restaurants from database
-
-f"SELECT * FROM restaurant as r WHERE r.restaurant_id IN (SELECT ra.restaurant_id FROM restaurant_address as ra WHERE ra.address_id IN 
-(SELECT a.address_id FROM address as a WHERE a.address_name = {location}));"
+1. Create possibility for companies to add their radius of delivery
