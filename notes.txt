@@ -1,1 +1,7 @@
 1. Create possibility for companies to add their radius of delivery
+2. package for point 1: https://github.com/googlemaps/google-maps-services-python
+3. SQL Query to get restaurants withing given distance:
+SELECT r.delivery_distance FROM restaurant as r WHERE r.restaurant_id IN 
+(SELECT ra.restaurant_id FROM restaurant_address as ra WHERE ra.address_id IN 
+(SELECT a.address_id FROM address a WHERE a.address_name='{location}' AND r.voivodeship = a.voivodeship))
+AND delivery_distance < {delivery_declared_distance};

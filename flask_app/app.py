@@ -1,17 +1,23 @@
 from flask import Flask, render_template, request, redirect, url_for
 import psycopg2
+from datetime import datetime
+import googlemaps
 
 app = Flask(__name__)
 
-psql_port = "5432"
+psql_port = "1020"
 
 def insert_restaurant(restaurant_data):
     conn = get_db_connection()
     conn.autocommit = True
     cur = conn.cursor()
     
-    cur.execute(f"""INSERT INTO restaurant(restaurant_id, name, description, img, address)
-                VALUES({restaurant_data[0]}, '{restaurant_data[1]}, '{restaurant_data[2]}, '{restaurant_data[3]}, '{restaurant_data[4]}')""")
+    
+    # for every column:value pairs add their values to 
+    column_query = "INSERT INTO restaurant("
+    values_query = " VALUES("
+    
+    
     
     cur.close()
     conn.close()
@@ -78,6 +84,15 @@ def get_poss_addresses():
 @app.route('/')
 def home():
     return "Hello World"
+
+@app.route('/restaurant', methods=['post', 'get'])
+def restaurant():
+    data = {}
+    if request.method == 'POST':
+        for item in request.form:
+            data[item] = (request.form.get(item))
+        return data
+    return render_template('restaurant.html', data=data)
 
 @app.route('/login/', methods=['post', 'get'])
 def login():

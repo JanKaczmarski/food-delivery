@@ -6,7 +6,11 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
     ports:
-      - 5432:5432
+      - 1020:5432
+    command:
+      - "postgres"
+      - "-c"
+      - "port=1020"
   app:
     build:
       dockerfile: Dockerfile.dev
