@@ -105,17 +105,15 @@ def insert_address(address):
     # Here connection between restaurants and address should be recorded in database, using restaurant_address
     # cur.execute()
     
-def insert_restaurant(restaurant_data):
-    conn = get_db_connection()
-    conn.autocommit = True
-    cur = conn.cursor()
-    
-    # for every column:value pairs add their values to 
-    column_query = "INSERT INTO restaurant("
-    values_query = " VALUES("
-    
-    cur.close()
-    conn.close()
+@app.route('/partner', methods=['post', 'get'])
+def become_partner():
+    data = {}
+    if request.method == 'POST':
+        for item in request.form:
+            data[item] = request.form.get(item) 
+        return data
+    return render_template('partner.html')
+
     
 def get_db_connection(db_name="locations"):
     conn = psycopg2.connect(

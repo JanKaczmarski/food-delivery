@@ -5,3 +5,22 @@ SELECT r.delivery_distance FROM restaurant as r WHERE r.restaurant_id IN
 (SELECT ra.restaurant_id FROM restaurant_address as ra WHERE ra.address_id IN 
 (SELECT a.address_id FROM address a WHERE a.address_name='{location}' AND r.voivodeship = a.voivodeship))
 AND delivery_distance < {delivery_declared_distance};
+
+
+
+## Find better solution than global variables, after refresh they bug
+
+
+#### 13.10.2022 13:24
+App is now able to get possible restaurants for given location, but only if this location is in database,
+Now i have to add that if new address is created check if is valid and then insert it into database and get result for him
+
+
+### 13.10.2022 18:01
+For new addresses restaurants are searched correctly, Now to lessen the usage of GOOGLE MAPS API, I have to create:
+1. New_address record in database
+2. Connect New_address with restaurants in reach, using <restaurant_address> table
+
+*******DONE**********
+
+After that create similar tool to append restaurants via completing form, Might try email verification or reCaptcha
