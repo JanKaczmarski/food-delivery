@@ -24,3 +24,16 @@ For new addresses restaurants are searched correctly, Now to lessen the usage of
 *******DONE**********
 
 After that create similar tool to append restaurants via completing form, Might try email verification or reCaptcha
+
+
+20.12.2022
+I came back to the project.
+
+TODO:
+1. check if the soon to be partner gave valid data - started doing this in storing_ideas.py
+2. add the restaurant to the database
+3. Allow the user to update photos of his dishes and restaurant, with limit
+
+Later:
+Insert a lot of restaurants for Białystok and then try to display them for user that just entered his location.
+
