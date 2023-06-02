@@ -2,9 +2,6 @@ import requests
 from json import loads
 import googlemaps
 
-
-
-
 def check_rest_address(address, api_key):
     payload = {}
     headers = {}
