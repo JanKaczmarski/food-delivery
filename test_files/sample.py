@@ -4,8 +4,7 @@ from pprint import pprint
 import requests
 from json import loads
 #address = "Białystok/Nowe Miasto"
-api_matrix_key='AIzaSyD9HmY5GR0zaOef0TBODBGIwjUNlmqC9HI'
-
+api_matrix_key = ''
 
 def check_validity(address):
     sep_address = address.split(sep='/')
