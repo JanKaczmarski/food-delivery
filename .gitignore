@@ -12,7 +12,7 @@ instance/
 .webassets-cache
 
 # Byte-compiled / optimized / DLL files
-__pycache__/
+flask_app/__pycache__/
 *.py[cod]
 
 # C extensions
