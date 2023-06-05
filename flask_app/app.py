@@ -57,13 +57,11 @@ def get_available_restaurants(origin, destination, rest_delivery_distance):
     for id, values in enumerate(directions_result['rows'][0]['elements']):
         distance_meters = values['distance']['value']
         # print(values['distance']['value'])
-        if distance_meters <= rest_delivery_distance[directions_result['destination_addresses'][id]]*1000:
+        if distance_meters <= rest_delivery_distance[directions_result['destination_addresses'][id]]:
             valid_addresses.append(
                 directions_result['destination_addresses'][id])
 
     return valid_addresses
-
-# route is created to display ongoing changes, will be deleted in the future
 
 
 def insert_address(address):
@@ -118,16 +116,6 @@ def insert_address(address):
 
     # Here connection between restaurants and address should be recorded in database, using restaurant_address
     # cur.execute()
-
-
-@app.route('/partner', methods=['post', 'get'])
-def become_partner():
-    data = {}
-    if request.method == 'POST':
-        for item in request.form:
-            data[item] = request.form.get(item)
-        return data
-    return render_template('partner.html')
 
 
 def get_db_connection(db_name="locations"):
@@ -197,6 +185,14 @@ def get_poss_addresses():
 def home():
     return "Hello World!"
 
+@app.route('/partner', methods=['post', 'get'])
+def become_partner():
+    data = {}
+    if request.method == 'POST':
+        for item in request.form:
+            data[item] = request.form.get(item)
+        return data
+    return render_template('partner.html')
 
 @app.route('/restaurant', methods=['post', 'get'])
 def restaurant():
