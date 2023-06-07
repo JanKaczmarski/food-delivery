@@ -1,17 +1,5 @@
 version: '3'
 services:
-  postgresql:
-    image: postgres:latest
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=postgres
-    ports:
-      - 1020:5432
-    command:
-      - "postgres"
-      - "-c"
-      - "port=1020"
   app:
     build:
       dockerfile: Dockerfile.dev

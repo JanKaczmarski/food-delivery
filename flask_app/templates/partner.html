@@ -13,15 +13,21 @@
             </p>
             <p>
                 <label for="range">W jakim zasięgu chcesz aby Twoje jedzenie było dowożone</label>
-                <input type="text" name="delivery_range" placeholder="Zakres Dowozu">
+                <input type="text" name="delivery_range" placeholder="km">
             </p>
             <p>
                 <label for="address">Podaj adres lokalu</label>
                 <input type="text" name="address" placeholder="Parkowa 1 00-594 Warszawa">
             </p>
             <p>
+                <label for="tags">Podaj tagi dla twojej restauracji</label><br>
+                <textarea id="tags" type="text" name="tags" style="height:60px; width:200px;" required minlength="0" maxlength="40"
+                    placeholder="Italian&Tasty&Family friendly"></textarea>
+            </p>
+            <p>
                 <label for="desc">Podaj opis swojej restauracji</label><br>
-                <textarea id="desc" type="text" name="desc" style="height:120px; width:200px;" required minlength="0" maxlength="200"></textarea>
+                <textarea id="desc" type="text" name="desc" style="height:120px; width:200px;" required minlength="0" maxlength="200"
+                    placeholder="Tasty delicious and memorable restaurant for whole family"></textarea>
             </p>
         </p>
         <p>
