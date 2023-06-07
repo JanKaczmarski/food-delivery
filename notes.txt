@@ -37,3 +37,8 @@ TODO:
 Later:
 Insert a lot of restaurants for Białystok and then try to display them for user that just entered his location.
 
+07.06.2023
+Finished rebuilding the flask app, changed postgres to sqlite and everything is working, now I have to create the partner website in which it will be easier to insert new restaurants
+to the database, I was thinking about using pickAPI from google, simply a map with the option to pick the address. It will ensure that data inside the database is always from the same
+source ie. googlemaps
+

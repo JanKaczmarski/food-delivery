@@ -75,3 +75,10 @@ docs/_build/
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+# local
+test_files/*
+
+
+# rest
+flask_app/main.db-journal

@@ -1,16 +1,18 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import psycopg2
+import sqlite3
 from datetime import datetime
 import googlemaps
 import os
 from dotenv import load_dotenv
+from unidecode import unidecode
+
 
 app = Flask(__name__)
 
 # import api_matrix_key and psql port
 load_dotenv()
 
-psql_port = os.getenv('psql_port')
 api_matrix_key = os.getenv('api_matrix_key')
 
 
@@ -31,15 +33,16 @@ def check_validity(address):
         return False
 
 
-def get_voivodeship(address):
+def get_province(address):
     gmaps = googlemaps.Client(key=api_matrix_key)
-    # Get voivodeship of given address, to extract smaller amount of data from db
+    # Get province of given address, to extract smaller amount of data from db
     place_id = gmaps.find_place(input=address,
                                 input_type="textquery")['candidates'][0]['place_id']
     address_components = gmaps.place(place_id)['result']['address_components']
 
     for component in address_components:
         if component['types'][0] == 'administrative_area_level_1':
+            # Voivodeship == province
             return component['long_name'].replace(" Voivodeship", "")
     raise Exception("Invalid address")
 
@@ -57,32 +60,42 @@ def get_available_restaurants(origin, destination, rest_delivery_distance):
     for id, values in enumerate(directions_result['rows'][0]['elements']):
         distance_meters = values['distance']['value']
         # print(values['distance']['value'])
-        if distance_meters <= rest_delivery_distance[directions_result['destination_addresses'][id]]:
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT restaurantID FROM restaurants WHERE restaurantADDRESS = ?",
+                    (directions_result['destination_addresses'][id],))
+
+        # return unidecode(directions_result['destination_addresses'][id])
+        if distance_meters <= rest_delivery_distance[cur.fetchone()[0]]:
             valid_addresses.append(
                 directions_result['destination_addresses'][id])
+
+        close_conn(conn, cur)
 
     return valid_addresses
 
 
 def insert_address(address):
-    # Get voivodeship of given address
+    # Get province of given address
     # Check if restaurant can deliver food to address
     # Insert compiled data to restaurant_address table to cache the values
     conn = get_db_connection()
-    conn.autocommit = True
     cur = conn.cursor()
 
-    voivodeship = get_voivodeship(address)
+    province = get_province(address)
     cur.execute(
-        f"SELECT address, delivery_distance FROM restaurant WHERE voivodeship = '{voivodeship}';")
+        "SELECT restaurantID, deliveryRadius, restaurantAddress FROM restaurants WHERE province = ?;", (province,))
     fetched_data = cur.fetchall()
 
     # Creating new address record in database
-    cur.execute('SELECT MAX(address_id) FROM address;')
+    cur.execute('SELECT MAX(addressID) FROM addresses;')
     new_address_id = cur.fetchall()[0][0]
     new_address_id = int(new_address_id) + 1
     cur.execute(
-        f"INSERT INTO address (address_id, address_name, voivodeship) VALUES('{new_address_id}', '{address}', '{voivodeship}')")
+        "INSERT INTO addresses (addressID, address, province) VALUES(?, ?, ?)", (new_address_id, address, province))
+    conn.commit()
 
     # If fetched data is empty return no possible restaurants
     try:
@@ -93,19 +106,19 @@ def insert_address(address):
     if passed:
         rest_delivery_distance = {
             tuple_of_data[0]: tuple_of_data[1] for tuple_of_data in fetched_data}
-        dest_addresses = [tuple_of_data[0] for tuple_of_data in fetched_data]
+        dest_addresses = [tuple_of_data[2] for tuple_of_data in fetched_data]
 
-        # dest_addresses = {id:{'address': address[0], 'delivery_distance': address[1]} for id, address in enumerate(cur.fetchall())}
         available_restaurants = get_available_restaurants(
             origin=address, destination=dest_addresses, rest_delivery_distance=rest_delivery_distance)
+
         for restaurant in available_restaurants:
             cur.execute(
-                f"SELECT restaurant_id FROM restaurant WHERE address = '{restaurant}';")
+                "SELECT restaurantID FROM restaurants WHERE restaurantAddress = ?;", (restaurant,))
             restaurant_id = cur.fetchall()[0][0]
 
             cur.execute(
-                f"INSERT INTO restaurant_address (restaurant_id, address_id) VALUES ('{restaurant_id}', '{new_address_id}')")
-
+                "INSERT INTO restaurant_address (restaurantID, addressID) VALUES (?, ?)", (restaurant_id, new_address_id))
+            conn.commit()
         cur.close()
         conn.close()
         return {"data": {"available_restaurants": available_restaurants, "address": address}}
@@ -118,61 +131,35 @@ def insert_address(address):
     # cur.execute()
 
 
-def get_db_connection(db_name="locations"):
-    conn = psycopg2.connect(
-        host="postgresql",
-        port=psql_port,
-        user="postgres",
-        password="password",
-        dbname=db_name
-    )
-
+def get_db_connection(db="./main.db"):
+    conn = sqlite3.connect(db)
     return conn
 
 
-def create_db():
-    conn = get_db_connection(db_name="postgres")
-    conn.autocommit = True
-    cur = conn.cursor()
-    try:
-        cur.execute('CREATE DATABASE locations;')
-    except:
-        return None
-    cur.close()
-    conn.close()
-    conn = get_db_connection()
-    conn.autocommit = True
-    cur = conn.cursor()
-    sql = open("create_tables.sql", "r")
-    cur.execute(sql.read())
-    sql.close()
-
+def close_conn(conn, cur):
     cur.close()
     conn.close()
 
 
 def get_data(location):
-    create_db()
     conn = get_db_connection()
-    conn.autocommit = True
     cur = conn.cursor()
 
-    cur.execute(f"""SELECT * FROM restaurant as r WHERE r.restaurant_id IN (SELECT ra.restaurant_id FROM restaurant_address as ra WHERE ra.address_id IN 
-                (SELECT a.address_id FROM address as a WHERE a.address_name = '{location}'));""")
+    cur.execute("""SELECT * FROM restaurants as r WHERE r.restaurantID IN (SELECT ra.restaurantID FROM restaurant_address as ra WHERE ra.addressID IN 
+                (SELECT a.addressID FROM addresses as a WHERE LOWER(a.address) = ?));""", (location,))
     data = cur.fetchall()
 
     cur.close()
     conn.close()
+
     return data
 
 
 def get_poss_addresses():
-    create_db()
     conn = get_db_connection()
-    conn.autocommit = True
     cur = conn.cursor()
 
-    cur.execute("SELECT address_name FROM address")
+    cur.execute("SELECT address FROM addresses")
     data = cur.fetchall()
 
     cur.close()
@@ -183,7 +170,8 @@ def get_poss_addresses():
 
 @app.route('/')
 def home():
-    return "Hello World!"
+    return f"Hello World!"
+
 
 @app.route('/partner', methods=['post', 'get'])
 def become_partner():
@@ -193,6 +181,7 @@ def become_partner():
             data[item] = request.form.get(item)
         return data
     return render_template('partner.html')
+
 
 @app.route('/restaurant', methods=['post', 'get'])
 def restaurant():
@@ -213,10 +202,10 @@ def login():
         if check_validity(address) is False:
             return "Invalid address"
         # unpack locations from psycopg2.cursor.fetchall() method
-        poss_addresses = [i[0] for i in get_poss_addresses()]
+        poss_addresses = [i[0].lower() for i in get_poss_addresses()]
         if address.lower() in poss_addresses:
             delivery_address_data = get_data(address.lower())
-            return holder(address)
+            return holder(address, delivery_address_data)
         else:
             return insert_address(address.lower())
 
@@ -224,5 +213,5 @@ def login():
 
 
 @app.route('/address/')
-def holder(address):
+def holder(address, delivery_address_data):
     return f"For {address.capitalize()} we have these restaurants: \n{delivery_address_data}"
