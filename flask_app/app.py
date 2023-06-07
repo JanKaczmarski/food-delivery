@@ -1,11 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-import psycopg2
+from flask import Flask, render_template, request
 import sqlite3
 from datetime import datetime
 import googlemaps
 import os
 from dotenv import load_dotenv
-from unidecode import unidecode
 
 
 app = Flask(__name__)
@@ -21,7 +19,6 @@ def check_validity(address):
     if len(sep_address) == 1:
         return False
     if len(sep_address[1].replace(" ", "")) > 0:
-        # does_address_exists(essa)
         gmaps = googlemaps.Client(key=api_matrix_key)
         place_id = gmaps.find_place(input=address,
                                     input_type="textquery")['candidates'][0]['place_id']
@@ -35,7 +32,6 @@ def check_validity(address):
 
 def get_province(address):
     gmaps = googlemaps.Client(key=api_matrix_key)
-    # Get province of given address, to extract smaller amount of data from db
     place_id = gmaps.find_place(input=address,
                                 input_type="textquery")['candidates'][0]['place_id']
     address_components = gmaps.place(place_id)['result']['address_components']
@@ -59,7 +55,6 @@ def get_available_restaurants(origin, destination, rest_delivery_distance):
     valid_addresses = []
     for id, values in enumerate(directions_result['rows'][0]['elements']):
         distance_meters = values['distance']['value']
-        # print(values['distance']['value'])
 
         conn = get_db_connection()
         cur = conn.cursor()
@@ -67,7 +62,6 @@ def get_available_restaurants(origin, destination, rest_delivery_distance):
         cur.execute("SELECT restaurantID FROM restaurants WHERE restaurantADDRESS = ?",
                     (directions_result['destination_addresses'][id],))
 
-        # return unidecode(directions_result['destination_addresses'][id])
         if distance_meters <= rest_delivery_distance[cur.fetchone()[0]]:
             valid_addresses.append(
                 directions_result['destination_addresses'][id])
@@ -126,9 +120,6 @@ def insert_address(address):
         cur.close()
         conn.close()
         return "No available restaurants"
-
-    # Here connection between restaurants and address should be recorded in database, using restaurant_address
-    # cur.execute()
 
 
 def get_db_connection(db="./main.db"):
