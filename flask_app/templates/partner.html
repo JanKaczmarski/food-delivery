@@ -1,28 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
 </head>
+
 <body>
     <form action="" method="post">
         <p>
-            <p>
-                <label for="name">Nazwa restauracji</label>
-                <input type="text" name="name" placeholder="Nazwa">
-            </p>
-            <p>
-                <label for="range">W jakim zasięgu chcesz aby Twoje jedzenie było dowożone</label>
-                <input type="text" name="delivery_range" placeholder="Zakres Dowozu">
-            </p>
-            <p>
-                <label for="address">Podaj adres lokalu</label>
-                <input type="text" name="address" placeholder="Parkowa 1 00-594 Warszawa">
-            </p>
-            <p>
-                <label for="desc">Podaj opis swojej restauracji</label><br>
-                <textarea id="desc" type="text" name="desc" style="height:120px; width:200px;" required minlength="0" maxlength="200"></textarea>
-            </p>
+        <p>
+            <label for="name">Nazwa restauracji</label>
+            <input type="text" name="name" placeholder="Nazwa">
+        </p>
+        <p>
+            <label for="deliveryRadius">W jakim zasięgu chcesz aby Twoje jedzenie było dowożone</label>
+            <input type="text" name="deliveryRadius" placeholder="km">
+        </p>
+        <p>
+            <label for="restaurantAddress">Gdzie znajduje się twoja restauracja</label><br>
+            <input type="text" name="restaurantAddress" placeholder="Precyzyjny adres">
+        </p>
+        <p>
+            <label for="tags">Podaj tagi dla twojej restauracji</label><br>
+            <textarea id="tags" type="text" name="tags" style="height:60px; width:200px;" required minlength="0"
+                maxlength="40" placeholder="Italian&Tasty&Family friendly"></textarea>
+        </p>
+        <p>
+            <label for="description">Podaj opis swojej restauracji</label><br>
+            <textarea id="description" type="text" name="description" style="height:120px; width:200px;" required minlength="0"
+                maxlength="200" placeholder="Tasty delicious and memorable restaurant for whole family"></textarea>
+        </p>
         </p>
         <p>
             <input type="submit" value="Submit">

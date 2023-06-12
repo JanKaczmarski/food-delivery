@@ -120,16 +120,6 @@ def insert_address(address):
     # cur.execute()
 
 
-@app.route('/partner', methods=['post', 'get'])
-def become_partner():
-    data = {}
-    if request.method == 'POST':
-        for item in request.form:
-            data[item] = request.form.get(item)
-        return data
-    return render_template('partner.html')
-
-
 def get_db_connection(db_name="locations"):
     conn = psycopg2.connect(
         host="postgresql",
@@ -192,20 +182,27 @@ def get_poss_addresses():
 
     return data
 
+def prepare_data(data):
+    data['deliveryRadius'] = int(data['deliveryRadius']) * 1000
+    #data['name'] = 
+        
+    return None
 
 @app.route('/')
 def home():
     return "Hello World!"
 
 
-@app.route('/restaurant', methods=['post', 'get'])
-def restaurant():
+@app.route('/partner', methods=['post', 'get'])
+def become_partner():
     data = {}
     if request.method == 'POST':
         for item in request.form:
-            data[item] = (request.form.get(item))
+            data[item] = request.form.get(item)
+        #prepared_data = prepare_data(data)
         return data
-    return render_template('restaurant.html', data=data)
+    
+    return render_template('partner.html')
 
 
 @app.route('/login/', methods=['post', 'get'])
