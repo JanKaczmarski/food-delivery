@@ -1,10 +1,14 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, url_for, redirect
 import sqlite3
 from datetime import datetime
 import googlemaps
 import os
 from dotenv import load_dotenv
 import re
+from email.message import EmailMessage
+import ssl
+import smtplib
+from random import randint
 
 
 app = Flask(__name__)
@@ -12,7 +16,27 @@ app = Flask(__name__)
 # import api_matrix_key and psql port
 load_dotenv()
 
+global verified
 api_matrix_key = os.getenv('api_matrix_key')
+email_sender = os.getenv('email_sender')
+email_password = os.getenv('email_password')
+
+
+def send_otp(email_receiver, otp):
+    subject = "Food Delivery - OTP"
+    body = f"""Your verification password is: {otp}"""
+
+    em = EmailMessage()
+    em['From'] = email_sender
+    em['To'] = email_receiver
+    em['subject'] = subject
+    em.set_content(body)
+
+    context = ssl.create_default_context()
+
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+        smtp.login(email_sender, email_password)
+        smtp.sendmail(email_sender, email_receiver, em.as_string())
 
 
 def check_validity(address):
@@ -29,6 +53,7 @@ def check_validity(address):
             return False
     else:
         return False
+
 
 def get_distance(a, b):
     gmaps = googlemaps.Client(key=api_matrix_key)
@@ -172,39 +197,91 @@ def get_poss_addresses():
 class Format:
     def address(address):
         gmaps = googlemaps.Client(key=api_matrix_key)
-        
+
         response = gmaps.find_place(input=address,
-                                input_type="textquery")
+                                    input_type="textquery")
 
         place_id = response['candidates'][0]['place_id']
 
-        formatted_address = gmaps.place(place_id)['result']['formatted_address']
-        
-        return formatted_address
+        formatted_address = gmaps.place(
+            place_id)['result']['formatted_address']
 
+        return formatted_address
 
     def hour(hour):
         if re.search('..:..', hour) and (0 <= int(hour[:2]) <= 24) and (0 <= int(hour[3:]) < 60) and len(hour) == 5:
             return hour
         elif re.search('.:..', hour) and (0 <= int(hour[3:]) < 60) and len(hour) == 4:
             return hour
-        
+
         raise Exception("Wrong number format!")
+
+
+def add_new_rest_to_db(data):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Check if the restaurant already exists
+    cur.execute('SELECT restaurantAddress FROM restaurants WHERE restaurantAddress = ?',
+                    (data['restaurantAddress'],))
+    if cur.fetchone() is not None:
+            raise Exception("Restaurant already exists")
+
+    # Insert new restaurant into the database
+    cur.execute("""SELECT r.restaurantID FROM restaurants r
+                    WHERE r.restaurantID = (SELECT MAX(rs.restaurantID) FROM restaurants as rs)""")
+
+    newID = int(cur.fetchone()[0]) + 1
+
+    cur.execute("""INSERT INTO restaurants ('restaurantID', 'name', 'restaurantAddress', 
+                    'deliveryRadius', 'tags', 'province', 'description'
+                    ) VALUES(?, ?, ?, ?, ?, ?, ?)""",
+                    (newID, data['name'], data['restaurantAddress'], data['deliveryRadius'],
+                     data['tags'], data['province'], data['description'])
+                    )
+    conn.commit()
+
+    cur.execute("""INSERT INTO workingHours(restaurantID, openTime, closeTime)
+                    VALUES(?, ?, ?)""", (newID, data['openTime'], data['closeTime']))
+    conn.commit()
+
+    # Create connection: new restaurant with addresses from address
+    # new records will be created in restaurant_address table
+    cur.execute(
+            'SELECT addressID, address FROM addresses WHERE province = ?', (data['province'],))
+    addresses = cur.fetchall()
+
+    for address in addresses:
+        if int(data['deliveryRadius']) > get_distance(address[1], data['restaurantAddress']):
+            cur.execute('INSERT INTO restaurant_address (addressID, restaurantID) VALUES(?, ?)',
+                        (address[0], newID))
+            conn.commit()
+
+    cur.close()
+    conn.close()
+
+
+@app.route('/verify/')
+def verify_email(email_receiver):
+    otp = randint(000000, 999999)
+    
+    verified = True
+
 
 
 def prepare_data(data):
     data['deliveryRadius'] = str(int(data['deliveryRadius']) * 1000)
-    
+
     data['restaurantAddress'] = Format.address(data['restaurantAddress'])
-    data['tags'] = data['tags'].strip()  
+    data['tags'] = data['tags'].strip()
     data['openTime'] = Format.hour(data['openTime'])
     data['closeTime'] = Format.hour(data['closeTime'])
-    
+
     data['province'] = get_province(data['restaurantAddress'])
-   
+
     data['description'] = data['description'].strip()
     data['name'] = data['name'].strip()
-    
+
     return data
 
 
@@ -220,51 +297,11 @@ def become_partner():
         for item in request.form:
             data[item] = request.form.get(item)
         data = prepare_data(data)
-        
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Check if the restaurant already exists
-        cur.execute('SELECT restaurantAddress FROM restaurants WHERE restaurantAddress = ?', (data['restaurantAddress'],))
-        if cur.fetchone() is not None:
-            raise Exception("Restaurant already exists")
-        
-        
-        # Insert new restaurant into the database
-        cur.execute("""SELECT r.restaurantID FROM restaurants r
-                    WHERE r.restaurantID = (SELECT MAX(rs.restaurantID) FROM restaurants as rs)""")
-        
-        newID = int(cur.fetchone()[0]) + 1
-        
-        cur.execute("""INSERT INTO restaurants ('restaurantID', 'name', 'restaurantAddress', 
-                    'deliveryRadius', 'tags', 'province', 'description'
-                    ) VALUES(?, ?, ?, ?, ?, ?, ?)""", 
-                    (newID, data['name'], data['restaurantAddress'], data['deliveryRadius'],
-                     data['tags'], data['province'], data['description'])
-                    )
-        conn.commit()
-        
-        cur.execute("""INSERT INTO workingHours(restaurantID, openTime, closeTime)
-                    VALUES(?, ?, ?)""", (newID, data['openTime'], data['closeTime']))
-        conn.commit()
-        
-        
-        # Create connection: new restaurant with addresses from address
-        # new records will be created in restaurant_address table
-        cur.execute(
-                'SELECT addressID, address FROM addresses WHERE province = ?', (data['province'],))
-        addresses = cur.fetchall()
+
+        add_new_rest_to_db(data)
+
         
 
-        for address in addresses:
-            if int(data['deliveryRadius']) > get_distance(address[1], data['restaurantAddress']):
-                cur.execute('INSERT INTO restaurant_address (addressID, restaurantID) VALUES(?, ?)',
-                    (address[0], newID))
-                conn.commit()
-        
-        cur.close()
-        conn.close()
-        
         return render_template('finishPartner.html')
     return render_template('partner.html')
 
