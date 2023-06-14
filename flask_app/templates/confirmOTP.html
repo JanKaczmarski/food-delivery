@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm OTP</title>
+</head>
+<body>
+    <div>
+        <form action="" method="post">
+            {% if wrongOTP %}
+                <h3 style="color:red">WRONG OTP</h3>
+            {% endif %}
+            <p>
+                <label for="otp">Paste OTP from your email</label>
+                <input type="text" name="otp">
+            </p>
+            <p>
+                <input type="submit" value="Submit">
+            </p>
+        </form>
+    </div>
+</body>
+</html>

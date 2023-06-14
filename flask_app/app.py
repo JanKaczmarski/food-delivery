@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect
+from flask import Flask, render_template, request, url_for, redirect, jsonify
 import sqlite3
 from datetime import datetime
 import googlemaps
@@ -234,10 +234,10 @@ def add_new_rest_to_db(data):
     newID = int(cur.fetchone()[0]) + 1
 
     cur.execute("""INSERT INTO restaurants ('restaurantID', 'name', 'restaurantAddress', 
-                    'deliveryRadius', 'tags', 'province', 'description'
-                    ) VALUES(?, ?, ?, ?, ?, ?, ?)""",
+                    'deliveryRadius', 'tags', 'province', 'description', 'email'
+                    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)""",
                     (newID, data['name'], data['restaurantAddress'], data['deliveryRadius'],
-                     data['tags'], data['province'], data['description'])
+                     data['tags'], data['province'], data['description'], data['email'])
                     )
     conn.commit()
 
@@ -261,12 +261,35 @@ def add_new_rest_to_db(data):
     conn.close()
 
 
-@app.route('/verify/')
-def verify_email(email_receiver):
+@app.route('/partner-verify', methods=['post', 'get'])
+def verify_email():
+    global otp
+    global user_email
+    global wrongOTP
+    
     otp = randint(000000, 999999)
     
-    verified = True
+    if request.method == 'POST':
+        user_email = request.form['email']
+        send_otp(request.form['email'], otp)
+        wrongOTP = True
+        return redirect(url_for('confirmOTP'))
+    else:
+        return render_template('partner-verify.html')
+    
 
+@app.route('/confirmOTP', methods=['post', 'get'])
+def confirmOTP():
+    
+    if request.method == 'POST':
+        if request.form['otp'] == str(otp):
+            return redirect(url_for('become_partner'))
+        else:
+            wrongOTP = True
+            return render_template('confirmOTP.html', wrongOTP=wrongOTP)
+    
+    elif request.method == 'GET':
+        return render_template('confirmOTP.html')    
 
 
 def prepare_data(data):
@@ -296,6 +319,8 @@ def become_partner():
     if request.method == 'POST':
         for item in request.form:
             data[item] = request.form.get(item)
+        
+        data['email'] = user_email
         data = prepare_data(data)
 
         add_new_rest_to_db(data)
@@ -316,7 +341,7 @@ def restaurant():
     return render_template('restaurant.html', data=data)
 
 
-@app.route('/login/', methods=['post', 'get'])
+@app.route('/login', methods=['post', 'get'])
 def login():
     global delivery_address_data
     if request.method == 'POST':
@@ -337,4 +362,5 @@ def login():
 
 @app.route('/address/')
 def holder(address, delivery_address_data):
-    return f"For {address.capitalize()} we have these restaurants: \n{delivery_address_data}"
+    #return f"For {address.capitalize()} we have these restaurants: \n{delivery_address_data}"
+    return render_template('availableRestaurants.html', data=delivery_address_data)
