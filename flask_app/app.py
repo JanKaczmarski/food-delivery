@@ -310,7 +310,7 @@ def prepare_data(data):
 
 @app.route('/')
 def home():
-    return f"Hello World!"
+    return render_template('index.html')
 
 
 @app.route('/partner', methods=['post', 'get'])
