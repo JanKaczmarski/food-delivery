@@ -18,10 +18,12 @@ pipeline {
 
         stage('Build image') {
             steps {
-                def dockerImage = docker.build(dockerimagename, "./flask_app/")
+                script {
+                    def dockerImage = docker.build(dockerimagename, "./flask_app/")
+                }
             }
         }
-        
+
         stage ('Push image') {
             environment {
                 registryCredential = 'dockerhub-credentials'
