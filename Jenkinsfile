@@ -9,8 +9,10 @@ pipeline {
     }
     stages {
         stage('Checkout source control') {
-            script {
-                git credentialsId: 'github-credentials', url: 'https://github.com/JanKaczmarski/food-delivery.git'
+            steps {
+                script {
+                    git credentialsId: 'github-credentials', url: 'https://github.com/JanKaczmarski/food-delivery.git'
+                }
             }
         }
 
