@@ -1,6 +1,7 @@
 pipeline {
     environment {
         dockerimagename = "bigjack213/food-app"
+        dockerImage = ""
     }
 
     agent any
@@ -19,7 +20,7 @@ pipeline {
         stage('Build image') {
             steps {
                 script {
-                    def dockerImage = docker.build(dockerimagename, "./flask_app/")
+                    dockerImage = docker.build(dockerimagename, "./flask_app/")
                 }
             }
         }
