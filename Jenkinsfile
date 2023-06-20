@@ -3,7 +3,7 @@ pipeline {
         dockerimagename = "bigjack213/food-app"
 
     }
-    angent any
+    agent any
     triggers {
         pollSCM 'H/5 * * * *'
     }
