@@ -362,5 +362,8 @@ def login():
 
 @app.route('/address/')
 def holder(address, delivery_address_data):
-    #return f"For {address.capitalize()} we have these restaurants: \n{delivery_address_data}"
     return render_template('availableRestaurants.html', data=delivery_address_data)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True)
+    
