@@ -223,9 +223,9 @@ def add_new_rest_to_db(data):
 
     # Check if the restaurant already exists
     cur.execute('SELECT restaurantAddress FROM restaurants WHERE restaurantAddress = ?',
-                    (data['restaurantAddress'],))
+                (data['restaurantAddress'],))
     if cur.fetchone() is not None:
-            raise Exception("Restaurant already exists")
+        raise Exception("Restaurant already exists")
 
     # Insert new restaurant into the database
     cur.execute("""SELECT r.restaurantID FROM restaurants r
@@ -236,9 +236,9 @@ def add_new_rest_to_db(data):
     cur.execute("""INSERT INTO restaurants ('restaurantID', 'name', 'restaurantAddress', 
                     'deliveryRadius', 'tags', 'province', 'description', 'email'
                     ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (newID, data['name'], data['restaurantAddress'], data['deliveryRadius'],
-                     data['tags'], data['province'], data['description'], data['email'])
-                    )
+                (newID, data['name'], data['restaurantAddress'], data['deliveryRadius'],
+                 data['tags'], data['province'], data['description'], data['email'])
+                )
     conn.commit()
 
     cur.execute("""INSERT INTO workingHours(restaurantID, openTime, closeTime)
@@ -248,7 +248,7 @@ def add_new_rest_to_db(data):
     # Create connection: new restaurant with addresses from address
     # new records will be created in restaurant_address table
     cur.execute(
-            'SELECT addressID, address FROM addresses WHERE province = ?', (data['province'],))
+        'SELECT addressID, address FROM addresses WHERE province = ?', (data['province'],))
     addresses = cur.fetchall()
 
     for address in addresses:
@@ -266,9 +266,9 @@ def verify_email():
     global otp
     global user_email
     global wrongOTP
-    
+
     otp = randint(000000, 999999)
-    
+
     if request.method == 'POST':
         user_email = request.form['email']
         send_otp(request.form['email'], otp)
@@ -276,20 +276,20 @@ def verify_email():
         return redirect(url_for('confirmOTP'))
     else:
         return render_template('partner-verify.html')
-    
+
 
 @app.route('/confirmOTP', methods=['post', 'get'])
 def confirmOTP():
-    
+
     if request.method == 'POST':
         if request.form['otp'] == str(otp):
             return redirect(url_for('become_partner'))
         else:
             wrongOTP = True
             return render_template('confirmOTP.html', wrongOTP=wrongOTP)
-    
+
     elif request.method == 'GET':
-        return render_template('confirmOTP.html')    
+        return render_template('confirmOTP.html')
 
 
 def prepare_data(data):
@@ -319,13 +319,11 @@ def become_partner():
     if request.method == 'POST':
         for item in request.form:
             data[item] = request.form.get(item)
-        
+
         data['email'] = user_email
         data = prepare_data(data)
 
         add_new_rest_to_db(data)
-
-        
 
         return render_template('finishPartner.html')
     return render_template('partner.html')
@@ -364,6 +362,5 @@ def login():
 def holder(address, delivery_address_data):
     return render_template('availableRestaurants.html', data=delivery_address_data)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
-    
+
+
