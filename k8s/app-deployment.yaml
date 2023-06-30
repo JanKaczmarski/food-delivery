@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      component: app
+  template:
+    metadata:
+      labels:
+        component: app
+    spec:
+      containers:
+      - name: app
+        image: bigjack213/food-app-k8s
+        ports:
+        - containerPort: 5000
